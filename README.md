@@ -50,6 +50,14 @@ your own discussion) are silently skipped to avoid noise.
 
 ![Notification dropdown showing "Referenced your discussion from Notif test"](docs/images/notification.png)
 
+### 5. Every post header shows a copy-to-clipboard `#N` chip
+
+So you always know which post number to use when typing `#42/pN`. Click the
+chip and the canonical cross-reference (`#discussionId/pN`) is copied to
+your clipboard, ready to paste into a reply.
+
+![Post header showing the # 1 chip between the author name and the timestamp](docs/images/post-number-chip.png)
+
 ---
 
 ## Quick start
@@ -75,6 +83,12 @@ immediately on new and edited posts.
 | ----------------------------------- | ---------------------------------- | ------------------------------------- |
 | `#42`                               | `#42 — <Discussion Title>`         | discussion 42, top of the page        |
 | `#42/p7`                            | `#42 — <Discussion Title> (post #7)` | discussion 42, post number 7        |
+
+> **Tip:** every post header shows a clickable `#N` chip — click it to copy
+> the canonical `#discussionId/pN` reference straight to your clipboard, so
+> you never have to guess a post number.
+
+
 | `https://forum.example.com/d/42`    | `#42 — <Discussion Title>`         | discussion 42 (URL auto-shortened)    |
 | `https://forum.example.com/d/42-some-slug/7` | `#42 — <Discussion Title> (post #7)` | discussion 42, post 7        |
 | `[click here](https://forum.example.com/d/42)` | a regular markdown link "click here" | preserved as-is — Markdown wins |
