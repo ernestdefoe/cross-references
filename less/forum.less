@@ -1,0 +1,125 @@
+/* Inline cross-references rendered in post body. */
+.CrossReference {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  padding: 0.05em 0.5em;
+  margin: 0 0.1em;
+  border-radius: 999px;
+  background: var(--control-bg);
+  color: var(--link-color);
+  font-size: 0.92em;
+  text-decoration: none;
+  white-space: nowrap;
+  vertical-align: baseline;
+  line-height: 1.4;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: var(--control-bg);
+    border-color: var(--control-color);
+    text-decoration: none;
+  }
+
+  &--hidden {
+    color: var(--muted-color);
+    background: transparent;
+    border-color: var(--control-bg);
+    cursor: not-allowed;
+  }
+
+  &-id {
+    font-variant-numeric: tabular-nums;
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  &-title {
+    color: inherit;
+  }
+
+  &-postRef {
+    color: var(--muted-color);
+    font-size: 0.92em;
+  }
+}
+
+/* Inline link rendered inside a CrossReferenceEventPost (the backlink
+   that appears in the target discussion). */
+.CrossReference-eventLink {
+  font-weight: 600;
+  color: var(--link-color);
+}
+
+/* Sidebar widget on DiscussionPage. */
+.Sidebar-CrossReferences {
+  margin-top: 16px;
+
+  .Sidebar-heading {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted-color);
+    margin: 0 0 8px;
+
+    .icon {
+      margin-right: 4px;
+      opacity: 0.7;
+    }
+  }
+}
+
+.CrossReferences-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.CrossReferences-item {
+  border-left: 2px solid var(--control-bg);
+  padding-left: 8px;
+  line-height: 1.35;
+
+  &:hover {
+    border-left-color: var(--link-color);
+  }
+}
+
+.CrossReferences-link {
+  display: block;
+  color: var(--text-color);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: none;
+    color: var(--link-color);
+
+    .CrossReferences-title {
+      text-decoration: underline;
+    }
+  }
+}
+
+.CrossReferences-title {
+  display: block;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.CrossReferences-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted-color);
+}
+
+.CrossReferences-cap {
+  font-size: 11px;
+  margin-top: 6px;
+  color: var(--muted-color);
+}
