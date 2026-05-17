@@ -1,6 +1,5 @@
 import app from 'flarum/forum/app';
 import Notification from 'flarum/forum/components/Notification';
-import username from 'flarum/common/helpers/username';
 
 /**
  * Notification renderer for the DiscussionReferencedBlueprint.
@@ -28,11 +27,12 @@ export default class DiscussionReferencedNotification extends Notification {
   }
 
   content() {
+    /* Pass strings (not models or vnodes) to the translator — Flarum's
+     * preprocessParameters() inspects each param for a `.displayName()`
+     * method and throws if a non-model value (string, vnode) sneaks in. */
     const notification = this.attrs.notification;
-    const fromUser = notification.fromUser();
     const subject = notification.subject();
     return app.translator.trans('ernestdefoe-cross-references.forum.notification.text', {
-      user: username(fromUser),
       discussion: subject ? subject.title() : '',
     });
   }

@@ -2,7 +2,6 @@ import app from 'flarum/forum/app';
 import Component from 'flarum/common/Component';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import humanTime from 'flarum/common/helpers/humanTime';
-import icon from 'flarum/common/helpers/icon';
 
 /**
  * Sidebar widget listing inbound cross-references to the current discussion.
@@ -75,7 +74,7 @@ export default class CrossRefSidebar extends Component {
 
     return m('.Sidebar-CrossReferences', [
       m('h4.Sidebar-heading', [
-        icon('fas fa-link'),
+        m('i.icon.fas.fa-link'),
         ' ',
         app.translator.trans('ernestdefoe-cross-references.forum.sidebar.heading', { count: this.refs.length }),
       ]),

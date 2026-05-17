@@ -1,6 +1,5 @@
 import app from 'flarum/forum/app';
 import EventPost from 'flarum/forum/components/EventPost';
-import icon from 'flarum/common/helpers/icon';
 
 /**
  * Renders an inline "Referenced from #X" event-post inside the target
