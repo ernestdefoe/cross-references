@@ -9,6 +9,11 @@ return Migration::createTableIfNotExists('cross_references', function (Blueprint
     /**
      * The source side: the post that authored the reference.
      * Cascade on post delete so editing/deleting a post wipes its outbound refs.
+     *
+     * INT (not BIGINT) to match Flarum core's `increments('id')` on posts
+     * and discussions — both are 32-bit `int unsigned`. MySQL FK creation
+     * requires exact size/sign match, so widening to bigint here would
+     * actually break the FK constraint.
      */
     $table->unsignedInteger('source_post_id');
     $table->unsignedInteger('source_discussion_id');
