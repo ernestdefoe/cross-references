@@ -9,10 +9,6 @@ import EventPost from 'flarum/forum/components/EventPost';
  * so translators can rearrange wording per language.
  */
 export default class CrossReferenceEventPost extends EventPost {
-  static initAttrs(attrs) {
-    super.initAttrs(attrs);
-  }
-
   icon() {
     return 'fas fa-link';
   }
