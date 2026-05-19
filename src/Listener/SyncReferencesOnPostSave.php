@@ -5,13 +5,14 @@ namespace Ernestdefoe\CrossReferences\Listener;
 use Ernestdefoe\CrossReferences\Model\CrossReference;
 use Ernestdefoe\CrossReferences\Notification\DiscussionReferencedBlueprint;
 use Ernestdefoe\CrossReferences\Post\CrossReferenceEventPost;
+use Flarum\Discussion\Discussion;
 use Flarum\Notification\NotificationSyncer;
 use Flarum\Post\CommentPost;
 use Flarum\Post\Event\Posted;
 use Flarum\Post\Event\Revised;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
-use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\QueryException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -40,12 +41,6 @@ class SyncReferencesOnPostSave
         protected NotificationSyncer $notifications,
         protected LoggerInterface $log,
     ) {}
-
-    public function subscribe(Dispatcher $events): void
-    {
-        $events->listen(Posted::class, [$this, 'handle']);
-        $events->listen(Revised::class, [$this, 'handle']);
-    }
 
     public function handle(Posted|Revised $event): void
     {
@@ -97,6 +92,38 @@ class SyncReferencesOnPostSave
             $createBacklinks = (bool) $this->settings->get('ernestdefoe-cross-references.createBacklinks', true);
             $notifyAuthor    = (bool) $this->settings->get('ernestdefoe-cross-references.notifyAuthor', true);
 
+            /**
+             * Batch-load every target discussion and its author up front so
+             * the per-ref loop doesn't pay an O(n) penalty for the notify
+             * path. A post pasting 10 forum URLs used to fire 20+ extra
+             * queries (one targetDiscussion + one User::find per ref);
+             * now it's two queries total no matter how many refs.
+             *
+             * Lookups are gated by $notifyAuthor — when notifications are
+             * disabled the data isn't needed and we skip the prefetch.
+             */
+            $targets = collect();
+            $authors = collect();
+            if ($notifyAuthor) {
+                $targetIds = array_values(array_unique(array_map(
+                    fn (string $k) => (int) $unique[$k]['discussionId'],
+                    $newKeys
+                )));
+
+                $targets = Discussion::query()
+                    ->whereIn('id', $targetIds)
+                    ->get(['id', 'user_id'])
+                    ->keyBy('id');
+
+                $authorIds = $targets->pluck('user_id')->unique()->filter()->all();
+                if (! empty($authorIds)) {
+                    $authors = User::query()
+                        ->whereIn('id', $authorIds)
+                        ->get()
+                        ->keyBy('id');
+                }
+            }
+
             foreach ($newKeys as $key) {
                 $ref = $unique[$key];
 
@@ -120,17 +147,15 @@ class SyncReferencesOnPostSave
                     /**
                      * Bump the target discussion's post count / last-posted
                      * timestamps so the backlink surfaces in the discussion
-                     * list "recent activity" feed. We touch the target via
-                     * the event post's own discussion relation; the post
-                     * count is auto-incremented by Flarum core's
-                     * Post::saved listener.
+                     * list "recent activity" feed. The post count is
+                     * auto-incremented by Flarum core's Post::saved listener.
                      */
                 }
 
                 if ($notifyAuthor) {
-                    $target = $row->targetDiscussion()->first();
+                    $target = $targets->get((int) $ref['discussionId']);
                     if ($target !== null && (int) $target->user_id !== (int) $post->user_id) {
-                        $recipient = User::find($target->user_id);
+                        $recipient = $authors->get((int) $target->user_id);
                         if ($recipient !== null && $recipient->can('viewForum')) {
                             $blueprint = new DiscussionReferencedBlueprint($row);
                             $this->notifications->sync($blueprint, [$recipient]);
@@ -138,13 +163,28 @@ class SyncReferencesOnPostSave
                     }
                 }
             }
+        } catch (QueryException $e) {
+            // Most likely transient/operational: missing table after a
+            // failed migration, connection blip, lock timeout, FK
+            // constraint violation. Log with a 'transient' marker and
+            // continue — the post itself has already been saved and the
+            // user's content is not at risk. Repeated entries with the
+            // same SQLSTATE are the signal for an operator to look at
+            // the cross_references schema.
+            $this->log->error('[cross-references] sync failed: database error', [
+                'post_id'  => $event->post->id ?? null,
+                'sqlstate' => $e->getCode(),
+                'exception' => $e,
+            ]);
         } catch (\Throwable $e) {
-            // Never let a cross-ref bug block a post-save. The post is the
-            // user's actual content; refs are best-effort metadata.
-            $this->log->error('[cross-references] SyncReferencesOnPostSave failed', [
+            // Deterministic bugs (type errors, missing relations,
+            // unparseable XML) — still swallowed so a cross-ref bug never
+            // blocks a post-save, but the exception object is passed
+            // through so the logger captures the full stack trace
+            // instead of just the message string.
+            $this->log->error('[cross-references] sync failed: unexpected error', [
                 'post_id'   => $event->post->id ?? null,
-                'exception' => get_class($e),
-                'message'   => $e->getMessage(),
+                'exception' => $e,
             ]);
         }
     }
