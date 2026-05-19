@@ -47,11 +47,20 @@ return [
             ListInboundReferencesController::class
         ),
 
+    /**
+     * Two backend-only behaviour flags read by SyncReferencesOnPostSave.
+     * Default true (both notifications and backlink event-posts on);
+     * admins can flip either via the settings panel in admin/extend.js.
+     *
+     * Intentionally NOT serializeToForum'd — neither value is consumed
+     * by the frontend, so pushing them into every forum bootstrap
+     * payload would be dead-weight bytes for nothing. The old
+     * 'showInline' toggle was removed entirely: the audit caught that
+     * no code read it, and the formatter pipeline that renders inline
+     * references is the extension's core feature — making it
+     * disableable doesn't earn its complexity.
+     */
     (new Extend\Settings())
-        ->serializeToForum('crossReferences.showInline', 'ernestdefoe-cross-references.showInline', 'boolval', true)
-        ->serializeToForum('crossReferences.notifyAuthor', 'ernestdefoe-cross-references.notifyAuthor', 'boolval', true)
-        ->serializeToForum('crossReferences.createBacklinks', 'ernestdefoe-cross-references.createBacklinks', 'boolval', true)
-        ->default('ernestdefoe-cross-references.showInline', true)
         ->default('ernestdefoe-cross-references.notifyAuthor', true)
         ->default('ernestdefoe-cross-references.createBacklinks', true),
 ];
