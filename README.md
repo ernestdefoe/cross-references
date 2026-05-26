@@ -1,5 +1,11 @@
 # Cross References
 
+[![Floxum](https://floxum.com/extension/ernestdefoe/cross-references/badge/name)](https://floxum.com/extension/ernestdefoe/cross-references)
+[![Version](https://floxum.com/extension/ernestdefoe/cross-references/badge/highest-version)](https://floxum.com/extension/ernestdefoe/cross-references)
+[![Downloads](https://floxum.com/extension/ernestdefoe/cross-references/badge/downloads)](https://floxum.com/extension/ernestdefoe/cross-references)
+[![Review](https://floxum.com/extension/ernestdefoe/cross-references/badge/review)](https://floxum.com/extension/ernestdefoe/cross-references)
+[![License](https://floxum.com/extension/ernestdefoe/cross-references/badge/license)](https://floxum.com/extension/ernestdefoe/cross-references)
+
 [![Flarum 2.0](https://img.shields.io/badge/Flarum-%5E2.0-orange)](https://flarum.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 
