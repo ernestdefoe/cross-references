@@ -361,6 +361,13 @@ so we can discuss the approach.
   on every change.
 - `php flarum cache:clear` after PHP changes.
 
+## Support
+
+Questions, bug reports, and feature requests:
+
+- **Support forum:** https://ernestdefoe.online
+- **Issues:** https://github.com/ernestdefoe/cross-references/issues
+
 ## License
 
 [MIT](LICENSE.md) © Ernestdefoe
