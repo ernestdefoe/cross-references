@@ -27,6 +27,20 @@ use Psr\Log\LoggerInterface;
  * Target discussion existence check uses whereVisibleTo too: hitting this
  * endpoint for a discussion you can't see returns 404 (not 403), matching
  * core's response shape for unscoped IDs.
+ *
+ * Why a custom JSON endpoint and not a JSON:API resource (app.store)?
+ * This is an intentional, performance-driven choice, not an oversight. The
+ * payload is a read-only, per-discussion aggregate fetched ONCE when the
+ * sidebar mounts — it's never created, updated, related, or re-read from
+ * the store, so the store's identity-map/caching gains don't apply.
+ * Meanwhile the custom shape lets us: (1) batch the whole thing into a
+ * single eager-loaded query with a denormalized `source.author` sub-object,
+ * avoiding the include round-trips a resource+relationships would imply;
+ * (2) do ONE batched source-side visibility check instead of per-row can();
+ * (3) return explicit `meta.capped50` so the widget knows results were
+ * truncated. Modelling all that as an AbstractDatabaseResource would add
+ * machinery (type, relationships, includes) for no behavioural gain. The
+ * frontend reads it via app.request() in CrossRefSidebar.
  */
 class ListInboundReferencesController implements RequestHandlerInterface
 {

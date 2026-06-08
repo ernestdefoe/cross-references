@@ -270,6 +270,20 @@ class SyncReferencesJob extends AbstractJob
             sourcePostId:       (int) $post->id,
             targetPostId:       $ref['postId'] !== null ? (int) $ref['postId'] : null,
         );
+
+        // Direct save() is correct here — the post number IS assigned. Core's
+        // Post::boot() registers a `creating` hook (inherited through
+        // AbstractEventPost) that sets `number` to MAX(number)+1 for the
+        // discussion via a SQL subquery, and a `created` hook that saves the
+        // target discussion. We deliberately do NOT route through
+        // Discussion::mergePost(): (1) Post doesn't implement
+        // MergeableInterface, so CrossReferenceEventPost has no saveAfter() to
+        // merge through; (2) mergePost()'s purpose is to coalesce consecutive
+        // same-type event posts by the same author (the rename-revert case) —
+        // backlinks must stay distinct, never merged; (3) it fires an extra
+        // `posts()->latest()->first()` query per backlink we don't need in a
+        // batched job. Verified on a live install: a backlink saved as
+        // posts.number = 4 in its target discussion.
         $eventPost->save();
     }
 
