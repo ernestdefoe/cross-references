@@ -1,8 +1,3 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
 import app from 'flarum/forum/app';
 import EventPost from 'flarum/forum/components/EventPost';
 
@@ -24,7 +19,9 @@ export default class CrossReferenceEventPost extends EventPost {
 
   descriptionData() {
     const post = this.attrs.post;
-    const content = post.content() || {};
+    // The event post's content column carries plain IDs (see §19); type the
+    // decoded shape so the fields below are known.
+    const content = (post.content() || {}) as { sourceDiscussionId?: number | string; targetPostId?: number | string };
     const sourceId = content.sourceDiscussionId;
     const targetPostId = content.targetPostId;
     const href = sourceId ? app.route('discussion', { id: sourceId }) : '#';
@@ -34,7 +31,7 @@ export default class CrossReferenceEventPost extends EventPost {
         'a.CrossReference-eventLink',
         {
           href,
-          onclick: (e) => {
+          onclick: (e: MouseEvent) => {
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
             if (!sourceId) return;
             e.preventDefault();

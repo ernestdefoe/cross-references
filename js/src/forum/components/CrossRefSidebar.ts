@@ -1,8 +1,3 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
 import app from 'flarum/forum/app';
 import Component from 'flarum/common/Component';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
@@ -21,7 +16,14 @@ import humanTime from 'flarum/common/helpers/humanTime';
  * in JS.
  */
 export default class CrossRefSidebar extends Component {
-  oninit(vnode) {
+  // State (assigned in oninit / load — definite-assignment asserted).
+  loading!: boolean;
+  error!: string | null;
+  refs!: any[];
+  cappedAt50!: boolean;
+  loadKey!: number | string | null;
+
+  oninit(vnode: any) {
     super.oninit(vnode);
     this.loading = true;
     this.error = null;
@@ -31,13 +33,13 @@ export default class CrossRefSidebar extends Component {
     this.load(vnode.attrs.discussionId);
   }
 
-  onupdate(vnode) {
+  onupdate(vnode: any) {
     if (vnode.attrs.discussionId !== this.loadKey) {
       this.load(vnode.attrs.discussionId);
     }
   }
 
-  load(discussionId) {
+  load(discussionId: number | string) {
     if (!discussionId) return;
     this.loadKey = discussionId;
     this.loading = true;
@@ -48,14 +50,14 @@ export default class CrossRefSidebar extends Component {
         method: 'GET',
         url: `${app.forum.attribute('apiUrl')}/discussions/${discussionId}/cross-references`,
       })
-      .then((response) => {
+      .then((response: any) => {
         if (this.loadKey !== discussionId) return; // stale response — discard
         this.refs = Array.isArray(response?.data) ? response.data : [];
         this.cappedAt50 = !!response?.meta?.capped50;
         this.loading = false;
         m.redraw();
       })
-      .catch((e) => {
+      .catch((e: any) => {
         if (this.loadKey !== discussionId) return;
         this.refs = [];
         this.loading = false;
@@ -85,17 +87,18 @@ export default class CrossRefSidebar extends Component {
       ]),
       m(
         'ul.CrossReferences-list',
-        this.refs.map((ref) =>
+        this.refs.map((ref: any) =>
           m(
             'li.CrossReferences-item',
             m(
               'a.CrossReferences-link',
               {
                 href: app.route('discussion', { id: `${ref.sourceDiscussionId}${ref.source.discussionSlug ? '-' + ref.source.discussionSlug : ''}` }),
-                onclick: (e) => {
+                onclick: (e: MouseEvent) => {
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
                   e.preventDefault();
-                  m.route.set(e.target.closest('a').getAttribute('href'));
+                  const href = (e.target as HTMLElement).closest('a')?.getAttribute('href');
+                  if (href) m.route.set(href);
                 },
               },
               [

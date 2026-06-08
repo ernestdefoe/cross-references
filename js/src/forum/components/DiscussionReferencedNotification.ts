@@ -1,8 +1,3 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
 import app from 'flarum/forum/app';
 import Notification from 'flarum/forum/components/Notification';
 
@@ -24,9 +19,9 @@ export default class DiscussionReferencedNotification extends Notification {
     const subject = notification.subject();
     if (!subject) return app.route('index');
 
-    const data = notification.content() || {};
+    const data = (notification.content() || {}) as { sourcePostId?: number | string };
     const sourcePostId = data.sourcePostId;
-    const slug = subject.slug ? subject.slug() : '';
+    const slug = (subject as any).slug ? (subject as any).slug() : '';
     const base = app.route('discussion', { id: `${subject.id()}${slug ? '-' + slug : ''}` });
     return sourcePostId ? `${base}#post-${sourcePostId}` : base;
   }
@@ -38,7 +33,7 @@ export default class DiscussionReferencedNotification extends Notification {
     const notification = this.attrs.notification;
     const subject = notification.subject();
     return app.translator.trans('ernestdefoe-cross-references.forum.notification.text', {
-      discussion: subject ? subject.title() : '',
+      discussion: subject ? (subject as any).title() : '',
     });
   }
 

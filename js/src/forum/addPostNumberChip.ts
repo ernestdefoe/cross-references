@@ -1,8 +1,3 @@
-// @ts-nocheck — TODO: declare class properties + parameter types
-// Transitional marker from the audit-driven TS conversion. The
-// underlying JS uses Flarum's `this.foo = ...` initialiser pattern
-// which TypeScript strict mode rejects. Remove once a follow-up pass
-// adds explicit property declarations and vnode/callback types.
 import app from 'flarum/forum/app';
 import { extend } from 'flarum/common/extend';
 import CommentPost from 'flarum/forum/components/CommentPost';
@@ -41,13 +36,13 @@ export default function addPostNumberChip() {
             'ernestdefoe-cross-references.forum.post_number.tooltip',
             { ref }
           ),
-          onclick: async (e) => {
+          onclick: async (e: Event) => {
             e.preventDefault();
             e.stopPropagation();
             try {
               await navigator.clipboard.writeText(ref);
               app.alerts.show(
-                { type: 'success', dismissible: true, autoshow: true },
+                { type: 'success', dismissible: true },
                 app.translator.trans(
                   'ernestdefoe-cross-references.forum.post_number.copied',
                   { ref }
@@ -66,7 +61,7 @@ export default function addPostNumberChip() {
               try {
                 document.execCommand('copy');
                 app.alerts.show(
-                  { type: 'success', dismissible: true, autoshow: true },
+                  { type: 'success', dismissible: true },
                   app.translator.trans(
                     'ernestdefoe-cross-references.forum.post_number.copied',
                     { ref }
