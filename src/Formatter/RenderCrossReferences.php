@@ -4,6 +4,7 @@ namespace Ernestdefoe\CrossReferences\Formatter;
 
 use Flarum\Discussion\Discussion;
 use Flarum\Http\RequestUtil;
+use Flarum\User\Guest;
 use Psr\Http\Message\ServerRequestInterface;
 use s9e\TextFormatter\Renderer;
 
@@ -44,7 +45,15 @@ class RenderCrossReferences
             return $xml;
         }
 
-        $actor = $request !== null ? RequestUtil::getActor($request) : null;
+        /**
+         * No request means the post is being rendered outside a page view —
+         * core's notification emails (new reply, mentions, messages) and
+         * other extensions' structured data call formatContent() with no
+         * argument. The reader isn't known there, so resolve titles as a
+         * Guest: the safe floor. Skipping the scope instead would mail the
+         * title of every restricted or private discussion a post names.
+         */
+        $actor = $request !== null ? RequestUtil::getActor($request) : new Guest();
 
         /**
          * Single batched fetch with visibility scope applied. Anything the
@@ -52,10 +61,7 @@ class RenderCrossReferences
          * refs as `<span class="CrossReference--hidden">#42</span>` so the
          * title never lands in the HTML for a non-viewer.
          */
-        $query = Discussion::query()->whereIn('id', $ids);
-        if ($actor !== null) {
-            $query->whereVisibleTo($actor);
-        }
+        $query = Discussion::query()->whereIn('id', $ids)->whereVisibleTo($actor);
 
         $titles = $query->pluck('title', 'id')->all();
 
