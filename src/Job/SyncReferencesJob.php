@@ -68,7 +68,15 @@ class SyncReferencesJob extends AbstractJob
         NotificationSyncer $notifications,
         LoggerInterface $log
     ): void {
-        $unique  = $this->uniqueRefs($post, $log);
+        $unique = $this->uniqueRefs($post, $log);
+
+        // Only discussions the post's author can see count as references. A
+        // member must not be able to drop "X referenced this" into a
+        // restricted-tag, private or hidden discussion (or ping its author)
+        // just by typing its number. One query for the whole set.
+        $targets = $this->visibleTargets($post, $unique);
+        $unique  = array_filter($unique, fn (array $ref) => $targets->has((int) $ref['discussionId']));
+
         $newKeys = $this->reconcile($post, $unique);
 
         if (empty($newKeys)) {
@@ -78,9 +86,7 @@ class SyncReferencesJob extends AbstractJob
         $createBacklinks = (bool) $settings->get('ernestdefoe-cross-references.createBacklinks', true);
         $notifyAuthor    = (bool) $settings->get('ernestdefoe-cross-references.notifyAuthor', true);
 
-        [$targets, $authors] = $notifyAuthor
-            ? $this->loadTargets($unique, $newKeys)
-            : [new Collection(), new Collection()];
+        $authors = $notifyAuthor ? $this->loadAuthors($targets, $unique, $newKeys) : new Collection();
 
         foreach ($newKeys as $key) {
             $ref = $unique[$key];
@@ -92,7 +98,10 @@ class SyncReferencesJob extends AbstractJob
                 'target_post_id'       => $ref['postId'] !== null ? (int) $ref['postId'] : null,
             ]);
 
-            if ($createBacklinks) {
+            // The backlink is a post in the target discussion, so it also
+            // needs the author to be allowed to reply there: no event posts
+            // in locked or read-only discussions.
+            if ($createBacklinks && $post->user->can('reply', $targets->get((int) $ref['discussionId']))) {
                 $this->createBacklink($post, $ref);
             }
 
@@ -234,31 +243,49 @@ class SyncReferencesJob extends AbstractJob
     }
 
     /**
-     * Batch-load target discussions + their authors for the new refs (two
-     * queries total regardless of how many references the post contains).
+     * The referenced discussions the post's author can see, keyed by id, in
+     * one query (tags eager-loaded when the tags extension is on, so the
+     * reply checks below don't lazy-load them one by one).
+     *
+     * @param  array<string, array{discussionId:int, postId:int|null}>  $unique
+     */
+    protected function visibleTargets(CommentPost $post, array $unique): Collection
+    {
+        $author = $post->user;
+        if ($unique === [] || $author === null) {
+            return new Collection();
+        }
+
+        $query = Discussion::query()
+            ->whereVisibleTo($author)
+            ->whereIn('id', array_values(array_unique(array_map(fn (array $r) => (int) $r['discussionId'], $unique))));
+
+        if ((new Discussion())->isRelation('tags')) {
+            $query->with('tags');
+        }
+
+        return $query->get()->keyBy('id');
+    }
+
+    /**
+     * Authors of the newly referenced discussions, in one query.
      *
      * @param  array<string, array{discussionId:int, postId:int|null}>  $unique
      * @param  list<string>  $newKeys
-     * @return array{0: Collection, 1: Collection}
      */
-    protected function loadTargets(array $unique, array $newKeys): array
+    protected function loadAuthors(Collection $targets, array $unique, array $newKeys): Collection
     {
-        $targetIds = array_values(array_unique(array_map(
-            fn (string $k) => (int) $unique[$k]['discussionId'],
-            $newKeys
-        )));
+        $authorIds = [];
+        foreach ($newKeys as $k) {
+            $userId = $targets->get((int) $unique[$k]['discussionId'])?->user_id;
+            if ($userId) {
+                $authorIds[$userId] = true;
+            }
+        }
 
-        $targets = Discussion::query()
-            ->whereIn('id', $targetIds)
-            ->get(['id', 'user_id'])
-            ->keyBy('id');
-
-        $authorIds = $targets->pluck('user_id')->unique()->filter()->all();
-        $authors = empty($authorIds)
+        return empty($authorIds)
             ? new Collection()
-            : User::query()->whereIn('id', $authorIds)->get()->keyBy('id');
-
-        return [$targets, $authors];
+            : User::query()->whereIn('id', array_keys($authorIds))->get()->keyBy('id');
     }
 
     protected function createBacklink(CommentPost $post, array $ref): void
