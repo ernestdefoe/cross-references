@@ -16,6 +16,9 @@
             "email": "ernestdefoe@gmail.com"
         }
     ],
+    "support": {
+        "forum": "https://discuss.flarum.org/d/39281-cross-references-for-flarum-2"
+    },
     "require": {
         "php": "^8.3",
         "flarum/core": "^2.0"
