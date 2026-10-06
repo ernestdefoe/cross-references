@@ -94,7 +94,6 @@ immediately on new and edited posts.
 > the canonical `#discussionId/pN` reference straight to your clipboard, so
 > you never have to guess a post number.
 
-
 | `https://forum.example.com/d/42`    | `#42 — <Discussion Title>`         | discussion 42 (URL auto-shortened)    |
 | `https://forum.example.com/d/42-some-slug/7` | `#42 — <Discussion Title> (post #7)` | discussion 42, post 7        |
 | `[click here](https://forum.example.com/d/42)` | a regular markdown link "click here" | preserved as-is — Markdown wins |
@@ -363,10 +362,9 @@ so we can discuss the approach.
 
 ## Support
 
-Questions, bug reports, and feature requests:
-
-- **Support forum:** https://ernestdefoe.online
-- **Issues:** https://github.com/ernestdefoe/cross-references/issues
+- **Support forum:** [Cross References on ernestdefoe.online](https://ernestdefoe.online/d/9)
+- **Flarum community:** [Cross References on discuss.flarum.org](https://discuss.flarum.org/d/39281-cross-references-for-flarum-2)
+- **Bug reports:** [GitHub issues](https://github.com/ernestdefoe/cross-references/issues)
 
 ## Discuss
 
