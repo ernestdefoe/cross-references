@@ -368,6 +368,10 @@ Questions, bug reports, and feature requests:
 - **Support forum:** https://ernestdefoe.online
 - **Issues:** https://github.com/ernestdefoe/cross-references/issues
 
+## Discuss
+
+Questions, ideas and release notes: [Cross References on discuss.flarum.org](https://discuss.flarum.org/d/39281-cross-references-for-flarum-2).
+
 ## License
 
 [MIT](LICENSE.md) © Ernestdefoe
