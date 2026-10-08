@@ -130,9 +130,11 @@ class SyncReferencesJob extends AbstractJob
         $goneKeys = array_diff($existing->keys()->all(), array_keys($unique));
 
         if (! empty($goneKeys)) {
+            // By array key, not Eloquent's only(): on a model collection that
+            // matches model ids, so it found nothing and no row was deleted.
             CrossReference::query()
                 ->where('source_post_id', $post->id)
-                ->whereIn('id', $existing->only($goneKeys)->pluck('id'))
+                ->whereIn('id', array_map(fn (string $key) => $existing[$key]->id, array_values($goneKeys)))
                 ->delete();
         }
 
