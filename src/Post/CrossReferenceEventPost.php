@@ -55,8 +55,8 @@ class CrossReferenceEventPost extends AbstractEventPost
     {
         return [
             'sourceDiscussionId' => $sourceDiscussionId,
-            'sourcePostId'       => $sourcePostId,
-            'targetPostId'       => $targetPostId,
+            'sourcePostId' => $sourcePostId,
+            'targetPostId' => $targetPostId,
         ];
     }
 }

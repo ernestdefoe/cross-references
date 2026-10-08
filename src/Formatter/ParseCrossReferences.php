@@ -18,7 +18,9 @@ use s9e\TextFormatter\Parser;
  */
 class ParseCrossReferences
 {
-    public function __construct(protected UrlGenerator $url) {}
+    public function __construct(protected UrlGenerator $url)
+    {
+    }
 
     public function __invoke(Parser $parser, mixed $context, string $text, ?User $actor = null): string
     {
@@ -35,11 +37,11 @@ class ParseCrossReferences
          */
         $quoted = preg_quote($base, '@');
         $pattern = '@'
-            . '(?<![\(\[\w])'                            // not preceded by `(` `[` or a word char
-            . $quoted
-            . '/d/(\d+)(?:-[^/\s<>\)\]]*)?(?:/(\d+))?'   // /d/{id}[-slug][/{post}]
-            . '(?![^\s<>\)\]]*[\)\]])'                   // not inside a `()` or `[]` pair
-            . '@';
+            .'(?<![\(\[\w])'                            // not preceded by `(` `[` or a word char
+            .$quoted
+            .'/d/(\d+)(?:-[^/\s<>\)\]]*)?(?:/(\d+))?'   // /d/{id}[-slug][/{post}]
+            .'(?![^\s<>\)\]]*[\)\]])'                   // not inside a `()` or `[]` pair
+            .'@';
 
         $replaced = preg_replace_callback($pattern, function (array $m): string {
             $id = (int) $m[1];

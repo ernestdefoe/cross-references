@@ -31,7 +31,8 @@ class SyncReferencesJob extends AbstractJob
 
     public function __construct(
         protected int $postId
-    ) {}
+    ) {
+    }
 
     public function handle(
         SettingsRepositoryInterface $settings,
@@ -48,15 +49,15 @@ class SyncReferencesJob extends AbstractJob
             // Transient/operational (missing table, lock timeout, FK). Log with
             // the SQLSTATE; the post itself is already saved, so nothing is lost.
             $log->error('[cross-references] sync failed: database error', [
-                'post_id'   => $this->postId,
-                'sqlstate'  => $e->getCode(),
+                'post_id' => $this->postId,
+                'sqlstate' => $e->getCode(),
                 'exception' => $e,
             ]);
         } catch (\Throwable $e) {
             // Deterministic bugs — logged with full stack trace (not silently
             // swallowed) so they're diagnosable, while never failing the job.
             $log->error('[cross-references] sync failed: unexpected error', [
-                'post_id'   => $this->postId,
+                'post_id' => $this->postId,
                 'exception' => $e,
             ]);
         }
@@ -75,7 +76,7 @@ class SyncReferencesJob extends AbstractJob
         // restricted-tag, private or hidden discussion (or ping its author)
         // just by typing its number. One query for the whole set.
         $targets = $this->visibleTargets($post, $unique);
-        $unique  = array_filter($unique, fn (array $ref) => $targets->has((int) $ref['discussionId']));
+        $unique = array_filter($unique, fn (array $ref) => $targets->has((int) $ref['discussionId']));
 
         $newKeys = $this->reconcile($post, $unique);
 
@@ -84,7 +85,7 @@ class SyncReferencesJob extends AbstractJob
         }
 
         $createBacklinks = (bool) $settings->get('ernestdefoe-cross-references.createBacklinks', true);
-        $notifyAuthor    = (bool) $settings->get('ernestdefoe-cross-references.notifyAuthor', true);
+        $notifyAuthor = (bool) $settings->get('ernestdefoe-cross-references.notifyAuthor', true);
 
         $authors = $notifyAuthor ? $this->loadAuthors($targets, $unique, $newKeys) : new Collection();
 
@@ -92,10 +93,10 @@ class SyncReferencesJob extends AbstractJob
             $ref = $unique[$key];
 
             $row = CrossReference::query()->create([
-                'source_post_id'       => $post->id,
+                'source_post_id' => $post->id,
                 'source_discussion_id' => $post->discussion_id,
                 'target_discussion_id' => (int) $ref['discussionId'],
-                'target_post_id'       => $ref['postId'] !== null ? (int) $ref['postId'] : null,
+                'target_post_id' => $ref['postId'] !== null ? (int) $ref['postId'] : null,
             ]);
 
             // The backlink is a post in the target discussion, so it also
@@ -124,9 +125,9 @@ class SyncReferencesJob extends AbstractJob
         $existing = CrossReference::query()
             ->where('source_post_id', $post->id)
             ->get(['id', 'target_discussion_id', 'target_post_id'])
-            ->keyBy(fn (CrossReference $r) => $r->target_discussion_id . ':' . ((int) $r->target_post_id));
+            ->keyBy(fn (CrossReference $r) => $r->target_discussion_id.':'.((int) $r->target_post_id));
 
-        $newKeys  = array_values(array_diff(array_keys($unique), $existing->keys()->all()));
+        $newKeys = array_values(array_diff(array_keys($unique), $existing->keys()->all()));
         $goneKeys = array_diff($existing->keys()->all(), array_keys($unique));
 
         if (! empty($goneKeys)) {
@@ -157,12 +158,12 @@ class SyncReferencesJob extends AbstractJob
             if ((int) $ref['discussionId'] === (int) $post->discussion_id) {
                 continue; // self-reference — skip silently
             }
-            $key = $ref['discussionId'] . ':' . ($ref['postId'] ?? '0');
+            $key = $ref['discussionId'].':'.($ref['postId'] ?? '0');
             $unique[$key] = $ref;
 
             if (count($unique) >= self::MAX_REFS) {
-                $log->info('[cross-references] post ' . $post->id . ' hit the '
-                    . self::MAX_REFS . '-reference cap; extra references were ignored.');
+                $log->info('[cross-references] post '.$post->id.' hit the '
+                    .self::MAX_REFS.'-reference cap; extra references were ignored.');
                 break;
             }
         }
@@ -204,7 +205,7 @@ class SyncReferencesJob extends AbstractJob
         foreach ($raw as $r) {
             $postId = null;
             if ($r['postnum'] !== null) {
-                $postId = $postIdByKey[$r['discussionId'] . ':' . $r['postnum']] ?? null;
+                $postId = $postIdByKey[$r['discussionId'].':'.$r['postnum']] ?? null;
             }
             $refs[] = ['discussionId' => $r['discussionId'], 'postId' => $postId];
         }
@@ -238,7 +239,7 @@ class SyncReferencesJob extends AbstractJob
             ->whereIn('number', array_keys($numbers))
             ->get(['id', 'discussion_id', 'number'])
             ->each(function ($p) use (&$map) {
-                $map[$p->discussion_id . ':' . $p->number] = (int) $p->id;
+                $map[$p->discussion_id.':'.$p->number] = (int) $p->id;
             });
 
         return $map;

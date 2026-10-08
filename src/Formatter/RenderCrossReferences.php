@@ -94,10 +94,10 @@ class RenderCrossReferences
                 if ($existingTitle === null) {
                     $attrs .= ' visible="0"';
                 } else {
-                    $attrs .= ' visible="1" title="' . htmlspecialchars($existingTitle, ENT_QUOTES | ENT_XML1, 'UTF-8') . '"';
+                    $attrs .= ' visible="1" title="'.htmlspecialchars($existingTitle, ENT_QUOTES | ENT_XML1, 'UTF-8').'"';
                 }
 
-                return '<CROSSREF' . $attrs . $closing . '>';
+                return '<CROSSREF'.$attrs.$closing.'>';
             },
             $xml,
         ) ?? $xml;

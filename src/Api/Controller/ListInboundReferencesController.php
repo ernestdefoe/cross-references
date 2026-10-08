@@ -13,7 +13,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * GET /api/discussions/{id}/cross-references
+ * GET /api/discussions/{id}/cross-references.
  *
  * Returns inbound references to this discussion — every (source post →
  * target discussion) row, hydrated with the source discussion title and
@@ -44,7 +44,9 @@ use Psr\Log\LoggerInterface;
  */
 class ListInboundReferencesController implements RequestHandlerInterface
 {
-    public function __construct(protected LoggerInterface $log) {}
+    public function __construct(protected LoggerInterface $log)
+    {
+    }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
@@ -95,19 +97,19 @@ class ListInboundReferencesController implements RequestHandlerInterface
                 ->filter(fn (CrossReference $r) => isset($visibleSet[$r->source_discussion_id]))
                 ->map(function (CrossReference $r): array {
                     return [
-                        'id'                 => $r->id,
+                        'id' => $r->id,
                         'sourceDiscussionId' => (int) $r->source_discussion_id,
-                        'sourcePostId'       => (int) $r->source_post_id,
-                        'targetPostId'       => $r->target_post_id !== null ? (int) $r->target_post_id : null,
-                        'createdAt'          => $r->created_at?->toIso8601String(),
-                        'source'             => [
+                        'sourcePostId' => (int) $r->source_post_id,
+                        'targetPostId' => $r->target_post_id !== null ? (int) $r->target_post_id : null,
+                        'createdAt' => $r->created_at?->toIso8601String(),
+                        'source' => [
                             'discussionTitle' => $r->sourceDiscussion?->title,
-                            'discussionSlug'  => $r->sourceDiscussion?->slug,
-                            'author'          => $r->sourcePost?->user ? [
-                                'id'          => (int) $r->sourcePost->user->id,
+                            'discussionSlug' => $r->sourceDiscussion?->slug,
+                            'author' => $r->sourcePost?->user ? [
+                                'id' => (int) $r->sourcePost->user->id,
                                 'displayName' => $r->sourcePost->user->display_name,
-                                'username'    => $r->sourcePost->user->username,
-                                'avatarUrl'   => $r->sourcePost->user->avatar_url,
+                                'username' => $r->sourcePost->user->username,
+                                'avatarUrl' => $r->sourcePost->user->avatar_url,
                             ] : null,
                         ],
                     ];
@@ -117,16 +119,17 @@ class ListInboundReferencesController implements RequestHandlerInterface
             return new JsonResponse([
                 'data' => $data,
                 'meta' => [
-                    'count'    => $data->count(),
+                    'count' => $data->count(),
                     'capped50' => $refs->count() >= 50,
                 ],
             ]);
         } catch (\Throwable $e) {
             $this->log->error('[cross-references] ListInboundReferencesController failed', [
                 'discussion_id' => $request->getAttribute('id'),
-                'exception'     => get_class($e),
-                'message'       => $e->getMessage(),
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
             ]);
+
             return new JsonResponse(['error' => 'An unexpected error occurred.'], 500);
         }
     }

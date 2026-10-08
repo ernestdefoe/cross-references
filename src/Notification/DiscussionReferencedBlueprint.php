@@ -26,7 +26,9 @@ class DiscussionReferencedBlueprint implements BlueprintInterface, AlertableInte
 {
     public const TYPE = 'discussionReferenced';
 
-    public function __construct(public CrossReference $reference) {}
+    public function __construct(public CrossReference $reference)
+    {
+    }
 
     public function getFromUser(): ?User
     {
@@ -49,9 +51,9 @@ class DiscussionReferencedBlueprint implements BlueprintInterface, AlertableInte
     public function getData(): array
     {
         return [
-            'sourcePostId'       => (int) $this->reference->source_post_id,
+            'sourcePostId' => (int) $this->reference->source_post_id,
             'sourceDiscussionId' => (int) $this->reference->source_discussion_id,
-            'targetPostId'       => $this->reference->target_post_id !== null
+            'targetPostId' => $this->reference->target_post_id !== null
                 ? (int) $this->reference->target_post_id
                 : null,
         ];

@@ -19,7 +19,8 @@ class SyncReferencesOnPostSave
 {
     public function __construct(
         protected Queue $queue
-    ) {}
+    ) {
+    }
 
     public function handle(Posted|Revised $event): void
     {

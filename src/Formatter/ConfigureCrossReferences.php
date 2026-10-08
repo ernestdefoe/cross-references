@@ -21,7 +21,9 @@ class ConfigureCrossReferences
 {
     public const TAG = 'CROSSREF';
 
-    public function __construct(protected UrlGenerator $url) {}
+    public function __construct(protected UrlGenerator $url)
+    {
+    }
 
     public function __invoke(Configurator $config): void
     {
@@ -51,7 +53,7 @@ class ConfigureCrossReferences
          * if the forum URL ever changes the formatter cache must be cleared.
          */
         $config->rendering->parameters['CROSSREF_DISCUSSION_URL'] =
-            rtrim($this->url->to('forum')->route('discussion', ['id' => '']), '/') . '/';
+            rtrim($this->url->to('forum')->route('discussion', ['id' => '']), '/').'/';
 
         /**
          * XSL template — renders to:
