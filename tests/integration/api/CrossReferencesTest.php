@@ -187,10 +187,18 @@ class CrossReferencesTest extends TestCase
     public function editing_a_reference_out_removes_it_but_keeps_the_backlink()
     {
         $id = $this->reply(2, 'Mentioning #1 and #4.');
-        $edit = fn (string $content) => $this->send($this->request('PATCH', "/api/posts/$id", [
-            'authenticatedAs' => 2,
-            'json' => ['data' => ['type' => 'posts', 'id' => (string) $id, 'attributes' => ['content' => $content]]],
-        ]))->getStatusCode();
+        $edit = function (string $content) use ($id) {
+            // Flarum 2.0 throttles a content edit within ten seconds of the
+            // member's last post or edit, as it does a new post. Move the
+            // member's posts back an hour so it is the edit under test.
+            $this->database()->table('posts')->where('user_id', 2)->update(['created_at' => Carbon::now()->subHour()]);
+            $this->database()->table('posts')->where('user_id', 2)->whereNotNull('edited_at')->update(['edited_at' => Carbon::now()->subHour()]);
+
+            return $this->send($this->request('PATCH', "/api/posts/$id", [
+                'authenticatedAs' => 2,
+                'json' => ['data' => ['type' => 'posts', 'id' => (string) $id, 'attributes' => ['content' => $content]]],
+            ]))->getStatusCode();
+        };
 
         $this->assertSame(200, $edit('Only #4 now.'));
         $this->assertSame([4], array_column($this->refs(), 'target_discussion_id'), 'Only the reference edited out goes');
