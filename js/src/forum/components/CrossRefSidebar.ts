@@ -117,10 +117,7 @@ export default class CrossRefSidebar extends Component {
           )
         )
       ),
-      this.cappedAt50
-        ? m('p.muted.CrossReferences-cap',
-            app.translator.trans('ernestdefoe-cross-references.forum.sidebar.capped_notice'))
-        : null,
+      this.cappedAt50 ? m('p.muted.CrossReferences-cap', app.translator.trans('ernestdefoe-cross-references.forum.sidebar.capped_notice')) : null,
     ]);
   }
 }

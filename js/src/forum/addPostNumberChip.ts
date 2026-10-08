@@ -32,10 +32,7 @@ export default function addPostNumberChip() {
         'button.Button.Button--text.PostHeader-crossRefNumber',
         {
           type: 'button',
-          title: app.translator.trans(
-            'ernestdefoe-cross-references.forum.post_number.tooltip',
-            { ref }
-          ),
+          title: app.translator.trans('ernestdefoe-cross-references.forum.post_number.tooltip', { ref }),
           onclick: async (e: Event) => {
             e.preventDefault();
             e.stopPropagation();
@@ -43,10 +40,7 @@ export default function addPostNumberChip() {
               await navigator.clipboard.writeText(ref);
               app.alerts.show(
                 { type: 'success', dismissible: true },
-                app.translator.trans(
-                  'ernestdefoe-cross-references.forum.post_number.copied',
-                  { ref }
-                )
+                app.translator.trans('ernestdefoe-cross-references.forum.post_number.copied', { ref })
               );
             } catch {
               /* Clipboard API can fail on insecure-origin / pre-permission;
@@ -62,18 +56,12 @@ export default function addPostNumberChip() {
                 document.execCommand('copy');
                 app.alerts.show(
                   { type: 'success', dismissible: true },
-                  app.translator.trans(
-                    'ernestdefoe-cross-references.forum.post_number.copied',
-                    { ref }
-                  )
+                  app.translator.trans('ernestdefoe-cross-references.forum.post_number.copied', { ref })
                 );
               } catch {
                 app.alerts.show(
                   { type: 'error', dismissible: true },
-                  app.translator.trans(
-                    'ernestdefoe-cross-references.forum.post_number.copy_failed',
-                    { ref }
-                  )
+                  app.translator.trans('ernestdefoe-cross-references.forum.post_number.copy_failed', { ref })
                 );
               } finally {
                 document.body.removeChild(temp);

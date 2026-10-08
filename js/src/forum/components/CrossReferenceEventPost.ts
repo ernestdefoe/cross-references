@@ -41,9 +41,7 @@ export default class CrossReferenceEventPost extends EventPost {
         `#${sourceId}`
       ),
       // Suffix indicating whether the ref points at a specific post.
-      suffix: targetPostId
-        ? app.translator.trans('ernestdefoe-cross-references.forum.event_post.post_specific')
-        : '',
+      suffix: targetPostId ? app.translator.trans('ernestdefoe-cross-references.forum.event_post.post_specific') : '',
     };
   }
 }

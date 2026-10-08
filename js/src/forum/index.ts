@@ -19,10 +19,6 @@ app.initializers.add('ernestdefoe-cross-references', () => {
   extend(DiscussionPage.prototype, 'sidebarItems', function (items) {
     const discussion = this.discussion;
     if (!discussion) return;
-    items.add(
-      'crossReferences',
-      m(CrossRefSidebar, { discussionId: discussion.id() }),
-      -100
-    );
+    items.add('crossReferences', m(CrossRefSidebar, { discussionId: discussion.id() }), -100);
   });
 });
