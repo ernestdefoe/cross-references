@@ -5,6 +5,7 @@ namespace Ernestdefoe\CrossReferences\Model;
 use Flarum\Database\AbstractModel;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\Post;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
@@ -42,22 +43,26 @@ class CrossReference extends AbstractModel
         'target_post_id',
     ];
 
-    public function sourcePost()
+    /** @return BelongsTo<Post, $this> */
+    public function sourcePost(): BelongsTo
     {
         return $this->belongsTo(Post::class, 'source_post_id');
     }
 
-    public function sourceDiscussion()
+    /** @return BelongsTo<Discussion, $this> */
+    public function sourceDiscussion(): BelongsTo
     {
         return $this->belongsTo(Discussion::class, 'source_discussion_id');
     }
 
-    public function targetDiscussion()
+    /** @return BelongsTo<Discussion, $this> */
+    public function targetDiscussion(): BelongsTo
     {
         return $this->belongsTo(Discussion::class, 'target_discussion_id');
     }
 
-    public function targetPost()
+    /** @return BelongsTo<Post, $this> */
+    public function targetPost(): BelongsTo
     {
         return $this->belongsTo(Post::class, 'target_post_id');
     }

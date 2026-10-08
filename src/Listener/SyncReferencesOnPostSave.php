@@ -3,7 +3,6 @@
 namespace Ernestdefoe\CrossReferences\Listener;
 
 use Ernestdefoe\CrossReferences\Job\SyncReferencesJob;
-use Flarum\Post\CommentPost;
 use Flarum\Post\Event\Posted;
 use Flarum\Post\Event\Revised;
 use Illuminate\Contracts\Queue\Queue;
@@ -24,11 +23,7 @@ class SyncReferencesOnPostSave
 
     public function handle(Posted|Revised $event): void
     {
-        $post = $event->post;
-        if (! $post instanceof CommentPost) {
-            return;
-        }
-
-        $this->queue->push(new SyncReferencesJob((int) $post->id));
+        // Both events carry a CommentPost; event posts never reach here.
+        $this->queue->push(new SyncReferencesJob((int) $event->post->id));
     }
 }
