@@ -5,6 +5,7 @@ namespace Ernestdefoe\CrossReferences\Api\Controller;
 use Ernestdefoe\CrossReferences\Model\CrossReference;
 use Flarum\Discussion\Discussion;
 use Flarum\Http\RequestUtil;
+use Flarum\Locale\TranslatorInterface;
 use Flarum\Post\Post;
 use Laminas\Diactoros\Response\JsonResponse;
 use Psr\Http\Message\ResponseInterface;
@@ -44,8 +45,10 @@ use Psr\Log\LoggerInterface;
  */
 class ListInboundReferencesController implements RequestHandlerInterface
 {
-    public function __construct(protected LoggerInterface $log)
-    {
+    public function __construct(
+        protected LoggerInterface $log,
+        protected TranslatorInterface $translator
+    ) {
     }
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -58,7 +61,7 @@ class ListInboundReferencesController implements RequestHandlerInterface
             $discussionId = (int) ($request->getQueryParams()['id'] ?? 0);
 
             if ($discussionId <= 0) {
-                return new JsonResponse(['error' => 'Invalid discussion id'], 422);
+                return new JsonResponse(['error' => $this->translator->trans('ernestdefoe-cross-references.api.invalid_discussion_id')], 422);
             }
 
             $target = Discussion::query()
@@ -66,7 +69,7 @@ class ListInboundReferencesController implements RequestHandlerInterface
                 ->find($discussionId);
 
             if ($target === null) {
-                return new JsonResponse(['error' => 'Not found'], 404);
+                return new JsonResponse(['error' => $this->translator->trans('ernestdefoe-cross-references.api.not_found')], 404);
             }
 
             /**
@@ -130,7 +133,7 @@ class ListInboundReferencesController implements RequestHandlerInterface
                 'message' => $e->getMessage(),
             ]);
 
-            return new JsonResponse(['error' => 'An unexpected error occurred.'], 500);
+            return new JsonResponse(['error' => $this->translator->trans('ernestdefoe-cross-references.api.unexpected_error')], 500);
         }
     }
 }
