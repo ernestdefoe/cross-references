@@ -89,6 +89,23 @@ class SyncReferencesJob extends AbstractJob
 
         $authors = $notifyAuthor ? $this->loadAuthors($targets, $unique, $newKeys) : new Collection();
 
+        // One backlink and one notification per target DISCUSSION, however
+        // many ways the post cites it: `#42` and `#42/p7` in one post are two
+        // rows but one "referenced this discussion". A discussion the post
+        // already cited before this edit has had its backlink.
+        $announced = [];
+        foreach (array_diff(array_keys($unique), $newKeys) as $key) {
+            $announced[(int) $unique[$key]['discussionId']] = true;
+        }
+        $announce = [];
+        foreach ($newKeys as $key) {
+            $discussionId = (int) $unique[$key]['discussionId'];
+            // The whole-discussion reference wins over a post-specific one.
+            if (! isset($announced[$discussionId]) && (! isset($announce[$discussionId]) || $unique[$key]['postId'] === null)) {
+                $announce[$discussionId] = $key;
+            }
+        }
+
         foreach ($newKeys as $key) {
             $ref = $unique[$key];
 
@@ -98,6 +115,10 @@ class SyncReferencesJob extends AbstractJob
                 'target_discussion_id' => (int) $ref['discussionId'],
                 'target_post_id' => $ref['postId'] !== null ? (int) $ref['postId'] : null,
             ]);
+
+            if (($announce[(int) $ref['discussionId']] ?? null) !== $key) {
+                continue;
+            }
 
             // The backlink is a post in the target discussion, so it also
             // needs the author to be allowed to reply there: no event posts

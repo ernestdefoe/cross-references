@@ -118,8 +118,26 @@ class CrossReferencesTest extends TestCase
             ['source_post_id' => $id, 'source_discussion_id' => 2, 'target_discussion_id' => 1, 'target_post_id' => null],
             ['source_post_id' => $id, 'source_discussion_id' => 2, 'target_discussion_id' => 1, 'target_post_id' => 5],
         ], collect($this->refs())->sortBy('target_post_id')->values()->all());
-        $this->assertSame(2, $this->backlinks(1));
-        $this->assertSame(2, $this->notifications(3));
+        $this->assertSame(1, $this->backlinks(1), 'One backlink per discussion, however it is cited');
+        $this->assertSame(1, $this->notifications(3));
+        $this->assertNull(json_decode($this->database()->table('posts')->where('type', 'crossReference')->value('content'), true)['targetPostId'], 'The whole-discussion reference wins');
+    }
+
+    #[Test]
+    public function citing_a_post_of_an_already_cited_discussion_adds_no_second_backlink()
+    {
+        $id = $this->reply(2, 'See #1/p2.');
+        $this->database()->table('posts')->where('user_id', 2)->update(['created_at' => Carbon::now()->subHour()]);
+
+        $response = $this->send($this->request('PATCH', "/api/posts/$id", [
+            'authenticatedAs' => 2,
+            'json' => ['data' => ['type' => 'posts', 'id' => (string) $id, 'attributes' => ['content' => 'See #1/p2, and #1 as a whole.']]],
+        ]));
+        $this->assertSame(200, $response->getStatusCode(), (string) $response->getBody());
+
+        $this->assertCount(2, $this->refs());
+        $this->assertSame(1, $this->backlinks(1));
+        $this->assertSame(1, $this->notifications(3));
     }
 
     #[Test]
