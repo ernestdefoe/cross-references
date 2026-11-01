@@ -104,6 +104,62 @@
   }
 }
 
+/* The heading is a button so phones can open the list; on wider screens
+   it is plain text and the list is always shown. */
+.CrossReferences-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  color: var(--muted-color);
+  pointer-events: none;
+}
+
+.CrossReferences-chevron {
+  display: none;
+}
+
+@media @phone {
+  .Sidebar-CrossReferences {
+    margin-top: 0;
+  }
+
+  .CrossReferences-toggle {
+    min-height: 36px;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .CrossReferences-chevron {
+    display: inline-block;
+    margin-left: auto;
+    transition: transform 0.15s;
+  }
+
+  .Sidebar-CrossReferences.is-expanded .CrossReferences-chevron {
+    transform: rotate(180deg);
+  }
+
+  .Sidebar-CrossReferences:not(.is-expanded) {
+    .CrossReferences-list,
+    .CrossReferences-cap {
+      display: none;
+    }
+
+    .Sidebar-heading {
+      margin-bottom: 0;
+    }
+  }
+}
+
 .CrossReferences-list {
   list-style: none;
   padding: 0;

@@ -22,6 +22,9 @@ export default class CrossRefSidebar extends Component {
   refs!: any[];
   cappedAt50!: boolean;
   loadKey!: number | string | null;
+  // Phones only: the widget sits above the first post there, so it starts
+  // as one row and opens on tap. Desktop CSS ignores this.
+  expanded!: boolean;
 
   oninit(vnode: any) {
     super.oninit(vnode);
@@ -30,6 +33,7 @@ export default class CrossRefSidebar extends Component {
     this.refs = [];
     this.cappedAt50 = false;
     this.loadKey = null;
+    this.expanded = false;
     this.load(vnode.attrs.discussionId);
   }
 
@@ -42,6 +46,7 @@ export default class CrossRefSidebar extends Component {
   load(discussionId: number | string) {
     if (!discussionId) return;
     this.loadKey = discussionId;
+    this.expanded = false;
     this.loading = true;
     this.error = null;
 
@@ -52,7 +57,7 @@ export default class CrossRefSidebar extends Component {
       })
       .then((response: any) => {
         if (this.loadKey !== discussionId) return; // stale response — discard
-        this.refs = Array.isArray(response?.data) ? response.data : [];
+        this.refs = this.group(Array.isArray(response?.data) ? response.data : []);
         this.cappedAt50 = !!response?.meta?.capped50;
         this.loading = false;
         m.redraw();
@@ -64,6 +69,25 @@ export default class CrossRefSidebar extends Component {
         this.error = e?.response?.error || app.translator.trans('ernestdefoe-cross-references.forum.sidebar.load_error');
         m.redraw();
       });
+  }
+
+  /**
+   * One row per citing discussion, not per citing post: a thread that cites
+   * this one three times is listed once, with its newest citation and a
+   * count. Rows arrive newest first.
+   */
+  group(rows: any[]) {
+    const byDiscussion = new Map<string, any>();
+
+    rows.forEach((ref) => {
+      const key = String(ref.sourceDiscussionId);
+      const seen = byDiscussion.get(key);
+
+      if (seen) seen.mentions++;
+      else byDiscussion.set(key, { ...ref, mentions: 1 });
+    });
+
+    return [...byDiscussion.values()];
   }
 
   view() {
@@ -79,11 +103,24 @@ export default class CrossRefSidebar extends Component {
       return null; // hide silently when nothing references this discussion
     }
 
-    return m('.Sidebar-CrossReferences', [
+    return m('.Sidebar-CrossReferences', { className: this.expanded ? 'is-expanded' : '' }, [
       m('h4.Sidebar-heading', [
-        m('i.icon.fas.fa-link'),
-        ' ',
-        app.translator.trans('ernestdefoe-cross-references.forum.sidebar.heading', { count: this.refs.length }),
+        m(
+          'button.CrossReferences-toggle',
+          {
+            type: 'button',
+            'aria-expanded': this.expanded ? 'true' : 'false',
+            onclick: () => {
+              this.expanded = !this.expanded;
+            },
+          },
+          [
+            m('i.icon.fas.fa-link'),
+            ' ',
+            app.translator.trans('ernestdefoe-cross-references.forum.sidebar.heading', { count: this.refs.length }),
+            m('i.icon.fas.fa-chevron-down.CrossReferences-chevron', { 'aria-hidden': 'true' }),
+          ]
+        ),
       ]),
       m(
         'ul.CrossReferences-list',
@@ -111,6 +148,9 @@ export default class CrossRefSidebar extends Component {
                     : null,
                   ' · ',
                   humanTime(ref.createdAt),
+                  ref.mentions > 1
+                    ? [' · ', app.translator.trans('ernestdefoe-cross-references.forum.sidebar.mentions', { count: ref.mentions })]
+                    : null,
                 ]),
               ]
             )
