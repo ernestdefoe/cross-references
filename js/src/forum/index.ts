@@ -6,12 +6,14 @@ import CrossRefSidebar from './components/CrossRefSidebar';
 import CrossReferenceEventPost from './components/CrossReferenceEventPost';
 import DiscussionReferencedNotification from './components/DiscussionReferencedNotification';
 import addPostNumberChip from './addPostNumberChip';
+import labelPreviewReferences from './labelPreviewReferences';
 
 app.initializers.add('ernestdefoe-cross-references', () => {
   app.postComponents.crossReference = CrossReferenceEventPost;
   app.notificationComponents.discussionReferenced = DiscussionReferencedNotification;
 
   addPostNumberChip();
+  labelPreviewReferences();
 
   /* Sidebar widget — render after the existing sidebar items so we don't
    * displace tag controls or moderation controls. Priority -100 puts us at

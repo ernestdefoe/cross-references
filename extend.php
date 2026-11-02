@@ -1,6 +1,7 @@
 <?php
 
 use Ernestdefoe\CrossReferences\Api\Controller\ListInboundReferencesController;
+use Ernestdefoe\CrossReferences\Api\Controller\ListTitlesController;
 use Ernestdefoe\CrossReferences\Console\MigrateLegacyCommand;
 use Ernestdefoe\CrossReferences\Formatter\ConfigureCrossReferences;
 use Ernestdefoe\CrossReferences\Formatter\ParseCrossReferences;
@@ -49,6 +50,11 @@ return [
             '/discussions/{id}/cross-references',
             'cross-references.inbound',
             ListInboundReferencesController::class
+        )
+        ->get(
+            '/cross-references/titles',
+            'cross-references.titles',
+            ListTitlesController::class
         ),
 
     /**

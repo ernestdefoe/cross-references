@@ -278,4 +278,21 @@ class CrossReferencesTest extends TestCase
 
         $this->assertSame(['2'], $ids);
     }
+
+    #[Test]
+    public function the_preview_gets_only_the_titles_the_reader_may_see()
+    {
+        $titles = function (string $ids, ?int $actor = null): array {
+            $response = $this->send($this->request('GET', '/api/cross-references/titles', $actor ? ['authenticatedAs' => $actor] : [])->withQueryParams(['ids' => $ids]));
+            $this->assertSame(200, $response->getStatusCode(), (string) $response->getBody());
+
+            return json_decode((string) $response->getBody(), true)['data'];
+        };
+
+        $this->assertSame(['1' => 'Target discussion'], $titles('1,3,999'), 'A guest never sees a restricted title');
+        $this->assertEquals(['1' => 'Target discussion', '3' => 'Staff secrets'], $titles('3,1,1', 1), 'Order is up to the database');
+        $this->assertSame([], $titles('x,-1,0,'));
+        // Only the first 20 ids are looked up; #1 is the 21st here.
+        $this->assertSame([], $titles(implode(',', range(100, 119)).',1'));
+    }
 }
