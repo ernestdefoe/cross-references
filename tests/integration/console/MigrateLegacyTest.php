@@ -73,10 +73,11 @@ class MigrateLegacyTest extends ConsoleTestCase
 
     private function refs(): array
     {
+        // Sorted here: Postgres puts NULL last in ORDER BY, MySQL and SQLite first.
         return $this->database()->table('cross_references')
-            ->orderBy('target_post_id')
             ->get(['source_post_id', 'source_discussion_id', 'target_discussion_id', 'target_post_id'])
             ->map(fn ($r) => array_map(fn ($v) => $v === null ? null : (int) $v, (array) $r))
+            ->sortBy('target_post_id')->values()
             ->all();
     }
 
