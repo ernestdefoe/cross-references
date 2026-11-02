@@ -318,6 +318,21 @@ trap surface; the gambit accepts numeric ids only, never strings.
 | Per-post listener failures block post save  | Possible                         | Caught + logged, never blocks save          |
 | Dedupe                                      | None                             | Unique index at storage layer               |
 
+### Moving over from `club-1/flarum-ext-cross-references`
+
+Posts written with club-1's extension keep its own tags in the database, so
+after the move to Flarum 2 they show as plain text. One command turns them
+into this extension's references:
+
+```bash
+php flarum crossref:migrate-legacy --dry-run   # count the posts it would change
+php flarum crossref:migrate-legacy
+```
+
+It rewrites `#730`, pasted discussion links and pasted post links, and lists
+them under "Referenced from" on the discussions they point to. Old references
+post no backlinks and send no notifications. Running it again is safe.
+
 ---
 
 ## Architecture notes (for extension authors reading this for reference)

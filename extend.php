@@ -1,6 +1,7 @@
 <?php
 
 use Ernestdefoe\CrossReferences\Api\Controller\ListInboundReferencesController;
+use Ernestdefoe\CrossReferences\Console\MigrateLegacyCommand;
 use Ernestdefoe\CrossReferences\Formatter\ConfigureCrossReferences;
 use Ernestdefoe\CrossReferences\Formatter\ParseCrossReferences;
 use Ernestdefoe\CrossReferences\Formatter\RenderCrossReferences;
@@ -29,6 +30,9 @@ return [
 
     (new Extend\Post())
         ->type(CrossReferenceEventPost::class),
+
+    (new Extend\Console())
+        ->command(MigrateLegacyCommand::class),
 
     (new Extend\Event())
         ->listen(Posted::class, SyncReferencesOnPostSave::class)

@@ -29,9 +29,19 @@ class SyncReferencesJob extends AbstractJob
     /** Hard cap on references reconciled per post — bounds work on a paste-bomb. */
     private const MAX_REFS = 50;
 
+    /**
+     * False when recording old references (crossref:migrate-legacy): the rows
+     * only, no backlink posts or notifications for something said years ago.
+     * A declared default, not a promoted one, so a job queued before this
+     * existed still unserializes with it set.
+     */
+    protected bool $announce = true;
+
     public function __construct(
-        protected int $postId
+        protected int $postId,
+        bool $announce = true
     ) {
+        $this->announce = $announce;
     }
 
     public function handle(
@@ -84,8 +94,8 @@ class SyncReferencesJob extends AbstractJob
             return;
         }
 
-        $createBacklinks = (bool) $settings->get('ernestdefoe-cross-references.createBacklinks', true);
-        $notifyAuthor = (bool) $settings->get('ernestdefoe-cross-references.notifyAuthor', true);
+        $createBacklinks = $this->announce && (bool) $settings->get('ernestdefoe-cross-references.createBacklinks', true);
+        $notifyAuthor = $this->announce && (bool) $settings->get('ernestdefoe-cross-references.notifyAuthor', true);
 
         $authors = $notifyAuthor ? $this->loadAuthors($targets, $unique, $newKeys) : new Collection();
 
