@@ -82,8 +82,12 @@ class ListInboundReferencesController implements RequestHandlerInterface
                 ->with(['sourceDiscussion', 'sourcePost.user'])
                 ->where('target_discussion_id', $discussionId)
                 ->orderByDesc('created_at')
-                ->limit(50)
+                ->limit(51)
                 ->get();
+
+            // The 51st row only tells us there are more than 50.
+            $capped = $refs->count() > 50;
+            $refs = $refs->take(50);
 
             // Visibility filter on the source side. We pull the ids back from
             // a visibility-scoped query rather than asserting can() per row —
@@ -123,7 +127,7 @@ class ListInboundReferencesController implements RequestHandlerInterface
                 'data' => $data,
                 'meta' => [
                     'count' => $data->count(),
-                    'capped50' => $refs->count() >= 50,
+                    'capped50' => $capped,
                 ],
             ]);
         } catch (\Throwable $e) {

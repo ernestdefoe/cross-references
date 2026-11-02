@@ -116,29 +116,26 @@ class SyncReferencesJob extends AbstractJob
             }
         }
 
-        foreach ($newKeys as $key) {
+        // The rows for a notification, in one query (the batch insert in
+        // reconcile() returns no models).
+        $rows = $notifyAuthor
+            ? CrossReference::query()->where('source_post_id', $post->id)->get()
+                ->keyBy(fn (CrossReference $r) => $r->target_discussion_id.':'.((int) $r->target_post_id))
+            : new Collection();
+        $canSeeSource = [];
+
+        foreach ($announce as $discussionId => $key) {
             $ref = $unique[$key];
-
-            $row = CrossReference::query()->create([
-                'source_post_id' => $post->id,
-                'source_discussion_id' => $post->discussion_id,
-                'target_discussion_id' => (int) $ref['discussionId'],
-                'target_post_id' => $ref['postId'] !== null ? (int) $ref['postId'] : null,
-            ]);
-
-            if (($announce[(int) $ref['discussionId']] ?? null) !== $key) {
-                continue;
-            }
 
             // The backlink is a post in the target discussion, so it also
             // needs the author to be allowed to reply there: no event posts
             // in locked or read-only discussions.
-            if ($createBacklinks && $post->user->can('reply', $targets->get((int) $ref['discussionId']))) {
+            if ($createBacklinks && $post->user->can('reply', $targets->get($discussionId))) {
                 $this->createBacklink($post, $ref);
             }
 
-            if ($notifyAuthor) {
-                $this->maybeNotify($post, $ref, $row, $targets, $authors, $notifications);
+            if ($notifyAuthor && ($row = $rows->get($key)) !== null) {
+                $this->maybeNotify($post, $ref, $row, $targets, $authors, $notifications, $canSeeSource);
             }
         }
     }
@@ -153,24 +150,47 @@ class SyncReferencesJob extends AbstractJob
      */
     protected function reconcile(CommentPost $post, array $unique): array
     {
-        $existing = CrossReference::query()
-            ->where('source_post_id', $post->id)
-            ->get(['id', 'target_discussion_id', 'target_post_id'])
-            ->keyBy(fn (CrossReference $r) => $r->target_discussion_id.':'.((int) $r->target_post_id));
+        return $post->getConnection()->transaction(function () use ($post, $unique) {
+            // One job per post at a time. Two quick edits queue two jobs; on
+            // separate workers both would see "not stored yet" and insert the
+            // same reference twice. The unique index can't stop that for a
+            // whole-discussion reference: target_post_id is NULL there, and
+            // NULLs never collide in a unique index (MySQL, PostgreSQL and
+            // SQLite alike). Locking the source post row serializes them.
+            Post::query()->whereKey($post->id)->lockForUpdate()->value('id');
 
-        $newKeys = array_values(array_diff(array_keys($unique), $existing->keys()->all()));
-        $goneKeys = array_diff($existing->keys()->all(), array_keys($unique));
-
-        if (! empty($goneKeys)) {
-            // By array key, not Eloquent's only(): on a model collection that
-            // matches model ids, so it found nothing and no row was deleted.
-            CrossReference::query()
+            $existing = [];
+            $dropIds = [];
+            foreach (CrossReference::query()
                 ->where('source_post_id', $post->id)
-                ->whereIn('id', array_map(fn (string $key) => $existing[$key]->id, array_values($goneKeys)))
-                ->delete();
-        }
+                ->get(['id', 'target_discussion_id', 'target_post_id']) as $r) {
+                $key = $r->target_discussion_id.':'.((int) $r->target_post_id);
+                if (isset($existing[$key]) || ! isset($unique[$key])) {
+                    // Edited out, or a duplicate left by a race before the lock.
+                    $dropIds[] = $r->id;
+                } else {
+                    $existing[$key] = true;
+                }
+            }
 
-        return $newKeys;
+            if ($dropIds !== []) {
+                CrossReference::query()->whereIn('id', $dropIds)->delete();
+            }
+
+            $newKeys = array_values(array_diff(array_keys($unique), array_keys($existing)));
+
+            if ($newKeys !== []) {
+                // One INSERT for every new reference; created_at is the column default.
+                CrossReference::query()->insert(array_map(fn (string $key) => [
+                    'source_post_id' => $post->id,
+                    'source_discussion_id' => $post->discussion_id,
+                    'target_discussion_id' => (int) $unique[$key]['discussionId'],
+                    'target_post_id' => $unique[$key]['postId'] !== null ? (int) $unique[$key]['postId'] : null,
+                ], $newKeys));
+            }
+
+            return $newKeys;
+        });
     }
 
     /**
@@ -354,7 +374,8 @@ class SyncReferencesJob extends AbstractJob
         CrossReference $row,
         Collection $targets,
         Collection $authors,
-        NotificationSyncer $notifications
+        NotificationSyncer $notifications,
+        array &$canSeeSource
     ): void {
         $target = $targets->get((int) $ref['discussionId']);
         if ($target === null || (int) $target->user_id === (int) $post->user_id) {
@@ -369,12 +390,14 @@ class SyncReferencesJob extends AbstractJob
         // Only notify if the recipient can actually see the SOURCE discussion —
         // otherwise the notification links them to content they can't view (and
         // leaks that the source exists).
-        $canSeeSource = Discussion::query()
+        // Once per recipient: one author of several cited discussions is
+        // asked about the same source once.
+        $canSeeSource[$recipient->id] ??= Discussion::query()
             ->whereVisibleTo($recipient)
             ->whereKey($post->discussion_id)
             ->exists();
 
-        if ($canSeeSource) {
+        if ($canSeeSource[$recipient->id]) {
             $notifications->sync(new DiscussionReferencedBlueprint($row), [$recipient]);
         }
     }

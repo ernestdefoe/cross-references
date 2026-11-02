@@ -295,4 +295,71 @@ class CrossReferencesTest extends TestCase
         // Only the first 20 ids are looked up; #1 is the 21st here.
         $this->assertSame([], $titles(implode(',', range(100, 119)).',1'));
     }
+
+    #[Test]
+    public function new_references_are_stored_in_one_insert()
+    {
+        // Backlinks and notifications are one per discussion by design; this
+        // is about the rows themselves.
+        $this->setting('ernestdefoe-cross-references.createBacklinks', '0');
+        $this->setting('ernestdefoe-cross-references.notifyAuthor', '0');
+        $discussions = [];
+        $posts = [];
+        for ($id = 30; $id < 38; $id++) {
+            $discussions[] = ['id' => $id, 'title' => "Target $id", 'created_at' => Carbon::now(), 'user_id' => 3, 'first_post_id' => $id + 100, 'comment_count' => 1];
+            $posts[] = ['id' => $id + 100, 'discussion_id' => $id, 'number' => 1, 'user_id' => 3, 'type' => 'comment', 'content' => '<t><p>Post</p></t>', 'created_at' => Carbon::now()];
+        }
+        $this->prepareDatabase([Discussion::class => $discussions, Post::class => $posts]);
+
+        // The repeated-query detector fails the request on a per-reference insert.
+        $this->reply(2, 'See '.implode(' ', array_map(fn ($id) => "#$id", range(30, 37))).'.');
+
+        $this->assertSame(range(30, 37), array_column($this->refs(), 'target_discussion_id'));
+    }
+
+    #[Test]
+    public function a_duplicate_whole_discussion_reference_is_cleaned_up_on_the_next_save()
+    {
+        $id = $this->reply(2, 'See #1.');
+        // What two workers racing on the same post could leave: NULL never
+        // collides in the unique index.
+        $this->database()->table('cross_references')->insert(['source_post_id' => $id, 'source_discussion_id' => 2, 'target_discussion_id' => 1, 'target_post_id' => null]);
+        $this->assertCount(2, $this->refs());
+        $this->database()->table('posts')->where('user_id', 2)->update(['created_at' => Carbon::now()->subHour()]);
+
+        $response = $this->send($this->request('PATCH', "/api/posts/$id", [
+            'authenticatedAs' => 2,
+            'json' => ['data' => ['type' => 'posts', 'id' => (string) $id, 'attributes' => ['content' => 'See #1 again.']]],
+        ]));
+        $this->assertSame(200, $response->getStatusCode(), (string) $response->getBody());
+
+        $this->assertCount(1, $this->refs());
+        $this->assertSame(1, $this->backlinks(1));
+    }
+
+    #[Test]
+    public function the_most_recent_50_notice_shows_only_when_there_are_more()
+    {
+        $add = function (int $from, int $to) {
+            $posts = [];
+            $refs = [];
+            for ($id = $from; $id <= $to; $id++) {
+                $posts[] = ['id' => $id, 'discussion_id' => 2, 'number' => $id, 'user_id' => 2, 'type' => 'comment', 'content' => '<t><p>#1</p></t>', 'created_at' => Carbon::now()];
+                $refs[] = ['source_post_id' => $id, 'source_discussion_id' => 2, 'target_discussion_id' => 1, 'target_post_id' => null];
+            }
+            $this->database()->table('posts')->insert($posts);
+            $this->database()->table('cross_references')->insert($refs);
+        };
+
+        $add(100, 149);
+        [$status, $body] = $this->inbound(1);
+        $this->assertSame(200, $status);
+        $this->assertCount(50, $body['data']);
+        $this->assertFalse($body['meta']['capped50'], 'Exactly 50 is all of them');
+
+        $add(150, 150);
+        [, $body] = $this->inbound(1);
+        $this->assertCount(50, $body['data']);
+        $this->assertTrue($body['meta']['capped50']);
+    }
 }

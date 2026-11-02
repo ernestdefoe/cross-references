@@ -50,6 +50,8 @@ export default class CrossRefSidebar extends Component {
     this.loading = true;
     this.error = null;
 
+    // app.request(), not app.store, on purpose: a read-only per-discussion
+    // aggregate fetched once; see ListInboundReferencesController for why.
     app
       .request({
         method: 'GET',
