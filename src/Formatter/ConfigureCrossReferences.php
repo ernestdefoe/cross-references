@@ -76,6 +76,11 @@ class ConfigureCrossReferences
                         <xsl:attribute name="data-cross-ref-post-number">
                             <xsl:value-of select="@postnum"/>
                         </xsl:attribute>
+                        <xsl:if test="string(@title) != \'\'">
+                            <xsl:attribute name="title">
+                                <xsl:value-of select="@title"/>
+                            </xsl:attribute>
+                        </xsl:if>
                         <xsl:attribute name="href">
                             <xsl:value-of select="$CROSSREF_DISCUSSION_URL"/>
                             <xsl:value-of select="@id"/>

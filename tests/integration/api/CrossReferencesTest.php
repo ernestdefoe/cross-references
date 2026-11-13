@@ -157,6 +157,7 @@ class CrossReferencesTest extends TestCase
 
         $this->assertStringContainsString('Target discussion', $html);
         $this->assertStringContainsString('href="http://localhost/d/1"', $html);
+        $this->assertStringContainsString('title="Target discussion"', $html, 'A long title is cut off in the chip, so it is also the tooltip');
         $this->assertStringNotContainsString('Staff secrets', $html, 'A guest never sees a restricted title');
         $this->assertStringContainsString('CrossReference--hidden', $html);
     }

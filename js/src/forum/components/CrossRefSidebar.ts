@@ -133,6 +133,7 @@ export default class CrossRefSidebar extends Component {
               'a.CrossReferences-link',
               {
                 href: app.route('discussion', { id: `${ref.sourceDiscussionId}${ref.source.discussionSlug ? '-' + ref.source.discussionSlug : ''}` }),
+                title: ref.source.discussionTitle || undefined,
                 onclick: (e: MouseEvent) => {
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
                   e.preventDefault();

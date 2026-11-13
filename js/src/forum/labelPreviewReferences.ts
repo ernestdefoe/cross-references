@@ -42,6 +42,7 @@ function label(root: HTMLElement) {
     span.className = 'CrossReference-title';
     span.textContent = title;
     chip.querySelector('.CrossReference-id')?.after(' ', span);
+    chip.title = title;
   }
 
   if (missing) {
